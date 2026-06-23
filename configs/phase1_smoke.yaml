@@ -1,0 +1,24 @@
+# 2-step smoke train for CI / sanity. Tiny everything. Extends the T4 config.
+extends: phase1_t4.yaml
+
+general:
+  run_name: phase1-smoke
+  output_dir: outputs/smoke
+
+model:
+  max_seq_length: 512
+
+train:
+  max_steps: 2                  # overrides epochs
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 1
+  logging_steps: 1
+  eval_steps: 2
+  save_steps: 2
+  save_total_limit: 1
+  early_stopping_patience: 0
+  packing: false                # avoid packing edge-cases at tiny scale
+
+data:
+  max_prompt_tokens: 400

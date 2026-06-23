@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clinical-scribe"
+version = "0.1.0"
+description = "Fine-tune Qwen3 to turn doctor-patient dialogue into structured clinical note text (documentation aid, not a diagnostic tool)."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Clinical Scribe contributors" }]
+keywords = ["llm", "qlora", "clinical-nlp", "qwen3", "fine-tuning"]
+
+# NOTE: runtime deps are intentionally kept here as loose ranges. The exact
+# resolved versions are locked against a clean Colab T4 runtime into
+# requirements.lock during the data step (see README "Reproducibility").
+dependencies = [
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# Heavy ML stack. Installed on Colab/GPU hosts, not needed for lint/unit tests
+# that don't touch CUDA. Pins are candidates -> see requirements.txt.
+train = [
+  "torch>=2.3",
+  "transformers>=4.51.3,<4.58",
+  "trl>=0.18.2,<0.25",
+  "peft>=0.18.0",
+  "bitsandbytes>=0.43",
+  "datasets>=2.19",
+  "accelerate>=0.34.1",
+]
+eval = [
+  "rouge-score>=0.1.2",
+  "bert-score>=0.3.13",
+  "evaluate>=0.4.1",
+]
+serve = ["vllm>=0.5"]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.5",
+  "black>=24.0",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  "types-PyYAML",
+]
+
+[project.scripts]
+clinical-scribe-prepare = "clinical_scribe.cli:prepare_data_main"
+clinical-scribe-train = "clinical_scribe.cli:train_main"
+clinical-scribe-eval = "clinical_scribe.cli:evaluate_main"
+clinical-scribe-export = "clinical_scribe.cli:export_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "N", "C4", "SIM"]
+ignore = ["E501"]  # line length handled by black
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "gpu: tests that require a CUDA GPU (deselect with -m 'not gpu')",
+  "slow: long-running tests such as smoke-train",
+]

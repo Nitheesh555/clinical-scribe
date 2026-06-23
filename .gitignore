@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Caches / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data & model artifacts (do not commit large/PHI-adjacent files)
+data/raw/
+data/processed/
+outputs/
+checkpoints/
+*.gguf
+*.safetensors
+*.bin
+wandb/
+runs/
+
+# Locked deps are committed; keep this here intentionally as a reminder it is NOT ignored:
+# requirements.lock
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local agent / tool settings
+.claude/

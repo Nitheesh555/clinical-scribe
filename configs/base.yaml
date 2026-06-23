@@ -1,0 +1,52 @@
+# Shared defaults. Phase/env-specific configs `extends: base.yaml` and override.
+# Every value here is validated by clinical_scribe.config.Config.
+
+general:
+  seed: 42
+  run_name: clinical-scribe
+  output_dir: outputs
+  checkpoint_dir: null          # set to a mounted Drive path on Colab
+
+model:
+  base_model_id: Qwen/Qwen3-4B-Instruct-2507   # non-thinking-only Qwen3 4B
+  max_seq_length: 2048
+  load_in_4bit: true
+  dtype: auto                   # resolved at runtime (T4 -> fp16)
+  attn_implementation: auto     # resolved at runtime (T4 -> sdpa)
+  use_unsloth: true
+  enable_thinking: false
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.0
+  bias: none
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  max_prompt_tokens: 1536
+  warn_truncation: true
+  drop_over_max: false
+  na_placeholder: "N/A"
+
+eval:
+  compute_rouge: true
+  compute_bertscore: true
+  check_structure_validity: true
+  faithfulness_entity_overlap: true
+  use_llm_judge: false
+  num_qualitative_samples: 10
+  max_new_tokens: 512
+  aci_bench_stress_test: true
+
+export:
+  merge_adapter: true
+  hub_repo_id: null             # you provide this at the export step
+  hub_private: true
+  gguf_quant_types: [q4_k_m, q8_0]
+
+tracking:
+  report_to: auto               # wandb if WANDB_API_KEY set, else tensorboard
+  wandb_project: clinical-scribe

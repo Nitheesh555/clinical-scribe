@@ -1,0 +1,28 @@
+# Phase 1 — free Colab T4 (16 GB). fp16 + SDPA + QLoRA 4-bit.
+extends: base.yaml
+
+general:
+  run_name: phase1-qwen3-4b-t4
+
+model:
+  max_seq_length: 2048          # fits T4 memory with packing + grad checkpointing
+  dtype: fp16                   # T4 has no bf16
+  attn_implementation: sdpa     # T4 has no FlashAttention-2
+
+train:
+  num_train_epochs: 3.0
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8   # effective batch = 16
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  gradient_checkpointing: true
+  packing: true
+  logging_steps: 10
+  eval_steps: 50
+  save_steps: 50
+  save_total_limit: 3
+  early_stopping_patience: 3
+  auto_oom_guard: true
