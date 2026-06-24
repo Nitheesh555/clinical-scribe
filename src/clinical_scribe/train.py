@@ -95,6 +95,17 @@ def _build_sft_config(
         )
         packing = False
 
+    # Unsloth ≥2026.x auto-enables padding-free batching when packing=False, which
+    # requires a formatting_func.  That path returns plain text so assistant_only_loss
+    # (which needs the messages-dict path) cannot be honoured simultaneously.
+    assistant_only_loss = t.assistant_only_loss
+    if loaded.backend == "unsloth" and not packing and assistant_only_loss:
+        logger.warning(
+            "Unsloth padding-free batching (packing=False) requires a formatting_func "
+            "which is incompatible with assistant_only_loss; disabling assistant_only_loss."
+        )
+        assistant_only_loss = False
+
     kwargs: dict[str, Any] = {
         "output_dir": config.general.output_dir,
         "per_device_train_batch_size": batch_size,
@@ -108,7 +119,7 @@ def _build_sft_config(
         "optim": t.optim,
         "max_length": max_length,
         "packing": packing,
-        "assistant_only_loss": t.assistant_only_loss,
+        "assistant_only_loss": assistant_only_loss,
         "gradient_checkpointing": gc_in_trainer,
         "logging_steps": t.logging_steps,
         "eval_strategy": "steps",
@@ -154,6 +165,20 @@ def _build_trainer(
             EarlyStoppingCallback(early_stopping_patience=config.train.early_stopping_patience)
         )
 
+    # Unsloth ≥2026.x padding-free batching (active when packing=False) raises
+    # "must specify a formatting_func" without this.  We apply the tokenizer's
+    # chat template here so Unsloth receives pre-formatted text strings.
+    formatting_func = None
+    if loaded.backend == "unsloth" and not sft_config.packing:
+        tok = loaded.tokenizer
+
+        def formatting_func(example: dict) -> str:
+            return tok.apply_chat_template(
+                example["messages"],
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+
     return SFTTrainer(
         model=loaded.model,
         args=sft_config,
@@ -162,6 +187,7 @@ def _build_trainer(
         processing_class=loaded.tokenizer,
         peft_config=loaded.peft_config,  # None for Unsloth (already wrapped)
         callbacks=callbacks,
+        formatting_func=formatting_func,
     )
 
 
