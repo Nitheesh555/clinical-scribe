@@ -172,12 +172,12 @@ def _build_trainer(
     if loaded.backend == "unsloth" and not sft_config.packing:
         tok = loaded.tokenizer
 
-        def formatting_func(example: dict) -> str:
-            return tok.apply_chat_template(
+        def formatting_func(example: dict) -> list[str]:
+            return [tok.apply_chat_template(
                 example["messages"],
                 tokenize=False,
                 add_generation_prompt=False,
-            )
+            )]
 
     return SFTTrainer(
         model=loaded.model,
