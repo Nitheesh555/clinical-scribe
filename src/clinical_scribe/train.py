@@ -173,11 +173,16 @@ def _build_trainer(
         tok = loaded.tokenizer
 
         def formatting_func(examples: dict) -> list[str]:
-            # Unsloth calls this in batched mode (dict of lists), so iterate
-            # over the batch and return one formatted string per example.
+            # Unsloth calls this twice with different shapes:
+            #   validation: single example  → examples["messages"] = [{"role":…}, …]
+            #   batched map: batch          → examples["messages"] = [[{…}, …], [{…}, …]]
+            # Detect by checking whether the first element is a dict (single) or list (batch).
+            msgs_field = examples["messages"]
+            if msgs_field and isinstance(msgs_field[0], dict):
+                return [tok.apply_chat_template(msgs_field, tokenize=False, add_generation_prompt=False)]
             return [
                 tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=False)
-                for msgs in examples["messages"]
+                for msgs in msgs_field
             ]
 
     return SFTTrainer(
