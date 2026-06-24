@@ -239,7 +239,8 @@ def compute_bertscore(
     from bert_score import score as bert_score_fn
 
     _, _, f1 = bert_score_fn(
-        predictions, references, model_type=model_type, lang=lang, verbose=False
+        predictions, references, model_type=model_type, lang=lang,
+        verbose=False, max_length=512,
     )
     return float(f1.mean().item())
 
