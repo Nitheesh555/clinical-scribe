@@ -161,12 +161,38 @@ class ExportConfig(BaseModel):
     """LoRA merge, Hub push, and GGUF export."""
 
     merge_adapter: bool = True
+    merged_subdir: str = "merged"
     # Provided by the user when we reach the export step (None = local only).
     hub_repo_id: str | None = None
     hub_private: bool = True
     push_adapter: bool = True
     push_merged: bool = True
+    # Repo suffix for the standalone adapter when also pushing a merged model.
+    adapter_repo_suffix: str = "-lora"
+    # GGUF export is off by default: it needs a local llama.cpp checkout (or the
+    # Unsloth backend). Set ``export_gguf: true`` and ``llama_cpp_dir`` to enable.
+    export_gguf: bool = False
+    gguf_subdir: str = "gguf"
     gguf_quant_types: list[str] = Field(default_factory=lambda: ["q4_k_m", "q8_0"])
+    llama_cpp_dir: str | None = None
+    model_license: str = "apache-2.0"
+
+
+class ServeConfig(BaseModel):
+    """vLLM OpenAI-compatible serving + client defaults."""
+
+    host: str = "0.0.0.0"
+    port: int = Field(8000, ge=1, le=65535)
+    served_model_name: str = "clinical-scribe"
+    # Defaults to model.max_seq_length when None.
+    max_model_len: int | None = None
+    gpu_memory_utilization: float = Field(0.90, gt=0.0, le=1.0)
+    dtype: str = "auto"
+    # Deterministic generation by default (documentation drafting).
+    max_new_tokens: int = Field(512, ge=1)
+    temperature: float = Field(0.0, ge=0.0)
+    top_p: float = Field(1.0, gt=0.0, le=1.0)
+    request_timeout_s: float = Field(120.0, gt=0.0)
 
 
 class TrackingConfig(BaseModel):
@@ -215,6 +241,7 @@ class Config(BaseModel):
     train: TrainConfig = Field(default_factory=TrainConfig)
     eval: EvalConfig = Field(default_factory=EvalConfig)
     export: ExportConfig = Field(default_factory=ExportConfig)
+    serve: ServeConfig = Field(default_factory=ServeConfig)
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     prompts: PromptConfig = Field(default_factory=PromptConfig)
 

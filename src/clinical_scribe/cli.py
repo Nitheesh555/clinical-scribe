@@ -102,3 +102,22 @@ def export_main(argv: list[str] | None = None) -> int:
 
     run_export(config, adapter_path=args.adapter)
     return 0
+
+
+def serve_main(argv: list[str] | None = None) -> int:
+    """Launch an OpenAI-compatible vLLM server for the merged model."""
+    parser = _common_parser("Serve the model via vLLM (OpenAI-compatible).")
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        required=True,
+        help="Path or Hub id of the merged model to serve.",
+    )
+    args = parser.parse_args(argv)
+    setup_logging(getattr(logging, args.log_level.upper(), logging.INFO))
+
+    config = load_config(args.config)
+
+    from .serve import run_server
+
+    return run_server(config, model_path=args.model_path)

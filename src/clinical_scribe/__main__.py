@@ -1,16 +1,17 @@
-"""Subcommand dispatcher: ``python -m clinical_scribe <prepare|train|evaluate|export> ...``."""
+"""Subcommand dispatcher: ``python -m clinical_scribe <prepare|train|evaluate|export|serve> ...``."""
 
 from __future__ import annotations
 
 import sys
 
-from .cli import evaluate_main, export_main, prepare_data_main, train_main
+from .cli import evaluate_main, export_main, prepare_data_main, serve_main, train_main
 
 _COMMANDS = {
     "prepare": prepare_data_main,
     "train": train_main,
     "evaluate": evaluate_main,
     "export": export_main,
+    "serve": serve_main,
 }
 
 

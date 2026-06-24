@@ -54,6 +54,7 @@ clinical-scribe-prepare = "clinical_scribe.cli:prepare_data_main"
 clinical-scribe-train = "clinical_scribe.cli:train_main"
 clinical-scribe-eval = "clinical_scribe.cli:evaluate_main"
 clinical-scribe-export = "clinical_scribe.cli:export_main"
+clinical-scribe-serve = "clinical_scribe.cli:serve_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
