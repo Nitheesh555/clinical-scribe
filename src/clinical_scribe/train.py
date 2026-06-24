@@ -172,12 +172,13 @@ def _build_trainer(
     if loaded.backend == "unsloth" and not sft_config.packing:
         tok = loaded.tokenizer
 
-        def formatting_func(example: dict) -> list[str]:
-            return [tok.apply_chat_template(
-                example["messages"],
-                tokenize=False,
-                add_generation_prompt=False,
-            )]
+        def formatting_func(examples: dict) -> list[str]:
+            # Unsloth calls this in batched mode (dict of lists), so iterate
+            # over the batch and return one formatted string per example.
+            return [
+                tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=False)
+                for msgs in examples["messages"]
+            ]
 
     return SFTTrainer(
         model=loaded.model,
