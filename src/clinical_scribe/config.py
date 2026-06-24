@@ -145,8 +145,16 @@ class EvalConfig(BaseModel):
     judge_model_id: str | None = None
     num_qualitative_samples: int = 10
     max_new_tokens: int = 512
+    batch_size: int = Field(8, ge=1)
+    # MTS-Dialog test JSONL files (relative to data.processed_dir) to evaluate.
+    test_files: list[str] = Field(default_factory=lambda: ["test1.jsonl", "test2.jsonl"])
+    report_path: str = "outputs/eval_report.md"
+    # Success-gate thresholds (Phase 1).
+    gate_min_structure_validity: float = 0.95
     # Held-out stress test on ACI-Bench (expected weaker; reported honestly).
     aci_bench_stress_test: bool = True
+    aci_bench_dataset_id: str = "mkieffer/ACI-Bench"
+    aci_bench_splits: list[str] = Field(default_factory=lambda: ["test1", "test2", "test3"])
 
 
 class ExportConfig(BaseModel):
