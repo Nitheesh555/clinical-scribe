@@ -117,9 +117,11 @@ class TrainConfig(BaseModel):
     max_grad_norm: float = 1.0
     optim: str = "adamw_8bit"  # bitsandbytes 8-bit optimizer (low VRAM on T4)
     gradient_checkpointing: bool = True
+    # NOTE: packing is silently disabled when assistant_only_loss is on — the two
+    # are incompatible on trl>=0.24 + Unsloth's compiled SFTTrainer (see train.py).
     packing: bool = True
     # Compute loss only on assistant spans (the section text); TRL auto-patches
-    # the Qwen3 chat template for this.
+    # the Qwen3 chat template for this. Takes precedence over packing.
     assistant_only_loss: bool = True
     logging_steps: int = 10
     eval_steps: int = 50

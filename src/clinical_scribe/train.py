@@ -82,6 +82,19 @@ def _build_sft_config(
     # Unsloth manages gradient checkpointing internally via get_peft_model.
     gc_in_trainer = t.gradient_checkpointing and loaded.backend != "unsloth"
 
+    # packing + assistant_only_loss are mutually exclusive on trl>=0.24 with the
+    # Unsloth compiled SFTTrainer: the packing path can't apply the chat template
+    # to conversational `messages` (it raises "must specify a formatting_func"),
+    # while assistant-only masking *requires* that path. Assistant-only loss wins
+    # (we only want loss on the section text), so drop packing when both are set.
+    packing = t.packing
+    if packing and t.assistant_only_loss:
+        logger.warning(
+            "packing is incompatible with assistant_only_loss on this trl/Unsloth "
+            "stack; disabling packing (assistant-only masking takes precedence)."
+        )
+        packing = False
+
     kwargs: dict[str, Any] = {
         "output_dir": config.general.output_dir,
         "per_device_train_batch_size": batch_size,
@@ -94,7 +107,7 @@ def _build_sft_config(
         "max_grad_norm": t.max_grad_norm,
         "optim": t.optim,
         "max_length": max_length,
-        "packing": t.packing,
+        "packing": packing,
         "assistant_only_loss": t.assistant_only_loss,
         "gradient_checkpointing": gc_in_trainer,
         "logging_steps": t.logging_steps,
