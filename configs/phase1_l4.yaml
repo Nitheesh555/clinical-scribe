@@ -1,0 +1,52 @@
+# Phase 1 retrain — Colab Pro L4 (24 GB). Fixes the faithfulness/overfitting
+# failures seen in the first run (hallucinated patient age/sex, repetition).
+#
+# Three changes vs phase1_t4.yaml, each targeting a known root cause:
+#
+#  1. use_unsloth: false
+#     Unsloth's compiled SFTTrainer forces a formatting_func (padding-free
+#     batching) that is incompatible with assistant_only_loss, so train.py
+#     silently DISABLES assistant-only masking — loss ends up computed over the
+#     whole sequence (system + dialogue + target). The transformers backend has
+#     no such constraint, so assistant_only_loss actually takes effect and the
+#     model learns to write *only* the section text, not to parrot the dialogue.
+#
+#  2. num_train_epochs: 2.0 (was 3.0)
+#     The first run memorized 1,201 examples over 3 epochs (eval_loss plateaued
+#     while faithfulness degraded). Fewer passes + early stopping reduce that.
+#
+#  3. data.use_augmented: true
+#     Folds the back-translated MTS-Dialog-Augmented set into the TRAIN split
+#     only (~3x the rows), further discouraging verbatim memorization.
+extends: base.yaml
+
+general:
+  run_name: phase1-qwen3-4b-l4
+
+model:
+  max_seq_length: 2048
+  dtype: bf16                    # L4 (Ada) supports bf16 natively
+  attn_implementation: sdpa      # reliable without a flash-attn install
+  use_unsloth: false             # (1) makes assistant_only_loss actually apply
+
+data:
+  use_augmented: true            # (3) ~3x training rows via back-translation
+
+train:
+  num_train_epochs: 2.0          # (2) fewer passes to curb overfitting
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8   # effective batch = 16
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  gradient_checkpointing: true
+  packing: false                 # required for assistant_only_loss masking
+  assistant_only_loss: true      # now honored (transformers backend)
+  logging_steps: 10
+  eval_steps: 50
+  save_steps: 50
+  save_total_limit: 3
+  early_stopping_patience: 3
+  auto_oom_guard: true

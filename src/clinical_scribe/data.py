@@ -284,6 +284,22 @@ def prepare_dataset(config: Config) -> dict[str, SplitStats]:
         csv_path = ensure_csv(config, rel)
         rows = read_csv_rows(csv_path)
         validate_schema(rows, config, source=f"{split_name} ({rel})")
+
+        # Augmentation applies to the TRAIN split only — never val/test, so the
+        # official evaluation splits stay leakage-free.
+        if split_name == "train" and config.data.use_augmented:
+            aug_rel = config.data.augmented_train_csv
+            aug_path = ensure_csv(config, aug_rel)
+            aug_rows = read_csv_rows(aug_path)
+            validate_schema(aug_rows, config, source=f"train-augmented ({aug_rel})")
+            logger.info(
+                "Augmenting train: %d main + %d augmented = %d rows",
+                len(rows),
+                len(aug_rows),
+                len(rows) + len(aug_rows),
+            )
+            rows = rows + aug_rows
+
         examples, stats = materialize_split(rows, config, split_name)
         write_jsonl(examples, processed / f"{split_name}.jsonl")
         all_stats[split_name] = stats

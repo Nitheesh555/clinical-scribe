@@ -75,6 +75,26 @@ def test_csv_handles_multiline_dialogue(mts_csv: Path) -> None:
     assert "\n" in rows[0]["dialogue"]  # quoted multi-line field preserved
 
 
+def test_use_augmented_appends_only_to_train(
+    base_config: Config, mts_csv: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When use_augmented is on, the augmented CSV is folded into train only."""
+    from clinical_scribe import data as data_mod
+
+    base_config.data.use_augmented = True
+    base_config.data.processed_dir = str(tmp_path)
+    # Point every CSV (main splits + augmented) at the same offline fixture; the
+    # augmented rows should double the train split, leaving val/test untouched.
+    monkeypatch.setattr(data_mod, "ensure_csv", lambda config, rel: mts_csv)
+
+    stats = data_mod.prepare_dataset(base_config)
+
+    # Fixture has 2 usable rows; train = main + augmented = 4, val/test = 2 each.
+    assert stats["train"].num_rows == 4
+    assert stats["val"].num_rows == 2
+    assert stats["test1"].num_rows == 2
+
+
 def test_write_jsonl_roundtrip(tmp_path: Path, base_config: Config, mts_csv: Path) -> None:
     rows = read_csv_rows(mts_csv)
     examples, _ = materialize_split(rows, base_config, "train")

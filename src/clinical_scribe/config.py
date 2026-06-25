@@ -83,6 +83,13 @@ class DataConfig(BaseModel):
     test_csv_1: str = "Main-Dataset/MTS-Dialog-TestSet-1-MEDIQA-Chat-2023.csv"
     test_csv_2: str = "Main-Dataset/MTS-Dialog-TestSet-2-MEDIQA-Sum-2023.csv"
 
+    # Optional augmented training set (back-translation, same repo & schema).
+    # Appended to the *train* split only when ``use_augmented`` is true — never to
+    # val/test, so the official evaluation splits stay clean. Reduces overfitting
+    # by ~3x'ing the training data.
+    use_augmented: bool = False
+    augmented_train_csv: str = "Augmented-Data/MTS-Dialog-Augmented-TrainingSet.csv"
+
     raw_dir: str = "data/raw"
     processed_dir: str = "data/processed"
 
