@@ -85,10 +85,13 @@ class DataConfig(BaseModel):
 
     # Optional augmented training set (back-translation, same repo & schema).
     # Appended to the *train* split only when ``use_augmented`` is true — never to
-    # val/test, so the official evaluation splits stay clean. Reduces overfitting
-    # by ~3x'ing the training data.
+    # val/test, so the official evaluation splits stay clean. File #3 is the
+    # combined French+Spanish round-trip set (3,603 rows): train 1,201 + 3,603 =
+    # ~4x the data, which curbs verbatim memorization / overfitting.
     use_augmented: bool = False
-    augmented_train_csv: str = "Augmented-Data/MTS-Dialog-Augmented-TrainingSet.csv"
+    augmented_train_csv: str = (
+        "Augmented-Data/MTS-Dialog-Augmented-TrainingSet-3-FR-and-ES-3603-Pairs-final.csv"
+    )
 
     raw_dir: str = "data/raw"
     processed_dir: str = "data/processed"
